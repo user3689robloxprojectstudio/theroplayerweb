@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 // Discord OAuth2 Credentials (Replace DISCORD_CLIENT_SECRET if you reset it in Dev Portal)
 const DISCORD_CLIENT_ID = '1566401329134436445';
 const DISCORD_CLIENT_SECRET = 'JJHICceMcJL49pWQtxDhbvNkRcI23jdq';
-const CALLBACK_URL = 'http://localhost:3000/auth/discord/callback';
+const CALLBACK_URL = 'https://theroplayerweb.onrender.com/auth/discord/callback';
 
 // Admin Discord ID Whitelist
 const ADMIN_DISCORD_ID = '1287363175158644757';
