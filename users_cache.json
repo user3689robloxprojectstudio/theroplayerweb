@@ -1,0 +1,23 @@
+{
+  "1287363175158644757": {
+    "id": "1287363175158644757",
+    "username": "theroplayer_official",
+    "avatar": "https://cdn.discordapp.com/avatars/1287363175158644757/95a170614fdca713dd3e6a5c72ffc16b.png",
+    "bio": "The owner of this website!",
+    "followers": [
+      "1345820369033887837"
+    ],
+    "following": [],
+    "verified": true
+  },
+  "1345820369033887837": {
+    "id": "1345820369033887837",
+    "username": "fusion_official",
+    "avatar": "https://cdn.discordapp.com/embed/avatars/0.png",
+    "bio": "Roblox developer & creator on TheRoPlayer Tools.",
+    "followers": [],
+    "following": [],
+    "verified": false,
+    "banned": false
+  }
+}
