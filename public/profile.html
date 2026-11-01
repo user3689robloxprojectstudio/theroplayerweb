@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile | TheRoPlayer Tools</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-color: #07090e; --surface: rgba(30, 41, 59, 0.7); --primary: #38bdf8; --text-main: #f8fafc; --text-muted: #94a3b8; --border: rgba(255, 255, 255, 0.08); }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+        nav { position: fixed; top: 0; left: 0; width: 100%; background: rgba(7, 9, 14, 0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; padding: 18px 40px; z-index: 1000; }
+        .nav-logo { font-size: 1.25rem; font-weight: 800; color: var(--primary); text-decoration: none; }
+        .nav-links { display: flex; gap: 25px; list-style: none; align-items: center; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; font-weight: 600; }
+        .nav-links a:hover { color: var(--primary); }
+
+        .main-content { max-width: 1000px; width: 100%; margin: 130px auto 60px auto; padding: 0 20px; flex: 1; }
+        .profile-header { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 40px; display: flex; align-items: center; gap: 30px; margin-bottom: 40px; }
+        .profile-avatar { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--primary); object-fit: cover; }
+        .profile-info h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+        .profile-info p { color: var(--text-muted); margin-bottom: 15px; }
+        .stats { display: flex; gap: 20px; font-weight: 600; font-size: 0.95rem; color: var(--text-muted); margin-bottom: 20px; }
+        .btn-follow { padding: 10px 24px; border-radius: 12px; background: var(--primary); color: #000; font-weight: 700; border: none; cursor: pointer; transition: 0.3s; }
+        .btn-follow:hover { opacity: 0.9; }
+
+        h2 { font-size: 1.5rem; margin-bottom: 20px; }
+        .container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; padding: 20px; }
+        .card img { width: 100%; height: 160px; object-fit: cover; border-radius: 10px; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="/" class="nav-logo">TheRoPlayer Tools</a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/upload.html">Upload</a></li>
+            <li><a href="/tos.html">Terms of Service</a></li>
+        </ul>
+    </nav>
+
+    <div class="main-content">
+        <div class="profile-header">
+            <img id="p-avatar" class="profile-avatar" src="" alt="Avatar">
+            <div class="profile-info">
+                <h1 id="p-username">Loading...</h1>
+                <p id="p-bio">...</p>
+                <div class="stats">
+                    <span id="p-followers">0 Followers</span>
+                    <span id="p-following">0 Following</span>
+                </div>
+                <button id="follow-btn" class="btn-follow" style="display: none;" onclick="toggleFollow()">Follow</button>
+            </div>
+        </div>
+
+        <h2>Created Assets & Scripts</h2>
+        <div class="container" id="user-posts"></div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('id');
+        let profileUserId = null;
+
+        async function loadProfile() {
+            const meRes = await fetch('/api/me');
+            const meData = await meRes.json();
+
+            const res = await fetch(`/api/users/${userId}`);
+            if (!res.ok) {
+                document.querySelector('.main-content').innerHTML = '<h2>User profile not found.</h2>';
+                return;
+            }
+            const data = await res.json();
+            profileUserId = data.user.id;
+
+            document.getElementById('p-avatar').src = data.user.avatar;
+            document.getElementById('p-username').textContent = data.user.username;
+            document.getElementById('p-bio').textContent = data.user.bio || 'No bio provided.';
+            document.getElementById('p-followers').textContent = `${data.user.followers.length} Followers`;
+            document.getElementById('p-following').textContent = `${data.user.following.length} Following`;
+
+            // Show follow button if logged in and not looking at own profile
+            if (meData.authenticated && meData.user.id !== profileUserId) {
+                const followBtn = document.getElementById('follow-btn');
+                followBtn.style.display = 'inline-block';
+                const isFollowing = data.user.followers.includes(meData.user.id);
+                followBtn.textContent = isFollowing ? 'Unfollow' : 'Follow';
+                followBtn.style.background = isFollowing ? '#334155' : 'var(--primary)';
+                followBtn.style.color = isFollowing ? '#fff' : '#000';
+            }
+
+            const postsContainer = document.getElementById('user-posts');
+            if (data.posts.length === 0) {
+                postsContainer.innerHTML = '<p style="color: var(--text-muted);">No posts yet.</p>';
+                return;
+            }
+
+            data.posts.forEach(post => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <img src="${post.image}" alt="${post.title}">
+                    <h3 style="margin-bottom: 8px;">${post.title}</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 12px;">${post.description}</p>
+                    <a href="/generateddown.html?id=${post.id}" style="color: var(--primary); text-decoration: none; font-weight: 600;">Download →</a>
+                `;
+                postsContainer.appendChild(card);
+            });
+        }
+
+        async function toggleFollow() {
+            const res = await fetch(`/api/users/${profileUserId}/follow`, { method: 'POST' });
+            if (res.ok) {
+                loadProfile();
+            } else {
+                alert('Please login to follow users.');
+            }
+        }
+
+        loadProfile();
+    </script>
+</body>
+</html>

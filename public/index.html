@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TheRoPlayer Tools | Uncopylocked</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #07090e;
+            --surface: rgba(30, 41, 59, 0.7);
+            --primary: #38bdf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 15% 20%, rgba(56, 189, 248, 0.08) 0%, transparent 40%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        nav {
+            position: fixed; top: 0; left: 0; width: 100%;
+            background: rgba(7, 9, 14, 0.85); backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 18px 40px; z-index: 1000;
+        }
+
+        .nav-logo { font-size: 1.25rem; font-weight: 800; color: var(--primary); text-decoration: none; }
+        .nav-links { display: flex; gap: 20px; list-style: none; align-items: center; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; font-weight: 600; transition: color 0.3s; }
+        .nav-links a:hover, .nav-links a.active { color: var(--primary); }
+
+        .user-profile { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .user-avatar { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; }
+        .btn-auth {
+            padding: 8px 18px; border-radius: 10px; background: #5865F2; color: #fff;
+            text-decoration: none; font-weight: 600;
+        }
+
+        .main-content { max-width: 1200px; width: 100%; margin: 0 auto; padding: 130px 20px 60px 20px; flex: 1; }
+        header { text-align: center; margin-bottom: 50px; }
+        header h1 { font-size: 3rem; font-weight: 800; color: var(--primary); margin-bottom: 12px; }
+
+        .container { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 30px; }
+        .card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+            overflow: hidden; display: flex; flex-direction: column; transition: transform 0.3s, border-color 0.3s;
+            cursor: pointer; position: relative;
+        }
+        .card:hover { transform: translateY(-8px); border-color: rgba(56, 189, 248, 0.4); }
+        
+        .badge-type {
+            position: absolute; top: 12px; right: 12px; padding: 4px 10px; border-radius: 8px;
+            font-size: 0.75rem; font-weight: 700; text-transform: uppercase; z-index: 2;
+        }
+        .badge-game { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
+        .badge-script { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
+        .badge-trending { position: absolute; top: 12px; left: 12px; background: rgba(234, 179, 8, 0.2); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.4); padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; z-index: 2; }
+
+        .card-img-wrapper { width: 100%; height: 200px; overflow: hidden; background: #000; }
+        .card img { width: 100%; height: 100%; object-fit: cover; }
+        .card-content { padding: 24px; display: flex; flex-direction: column; flex-grow: 1; }
+        .card-title { font-size: 1.35rem; font-weight: 700; margin-bottom: 10px; }
+        .card-description { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        .card-actions { display: flex; gap: 12px; }
+        .btn {
+            flex: 1; padding: 12px; border-radius: 12px; text-align: center; font-weight: 600;
+            text-decoration: none; transition: 0.3s; display: inline-block; cursor: pointer; border: none;
+        }
+        .btn-yt { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .btn-download { background: rgba(56, 189, 248, 0.15); color: var(--primary); border: 1px solid rgba(56, 189, 248, 0.3); }
+        .btn-download:hover { background: var(--primary); color: #000; }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(7, 9, 14, 0.85); backdrop-filter: blur(12px);
+            display: flex; justify-content: center; align-items: center; z-index: 2000;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+            padding: 20px;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        
+        .modal-card {
+            background: #1e293b; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 24px;
+            max-width: 650px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 30px; position: relative;
+            transform: scale(0.95); transition: transform 0.3s ease; box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+            display: flex; flex-direction: column; gap: 20px;
+        }
+        .modal-overlay.active .modal-card { transform: scale(1); }
+        
+        .modal-close {
+            position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); border: none;
+            color: #fff; width: 36px; height: 36px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; z-index: 10;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-close:hover { background: rgba(255,255,255,0.2); }
+
+        .modal-img { width: 100%; height: 240px; object-fit: cover; border-radius: 16px; background: #000; }
+        .modal-title { font-size: 1.8rem; font-weight: 800; color: #fff; }
+        
+        .modal-author { display: flex; align-items: center; gap: 12px; cursor: pointer; width: fit-content; }
+        .modal-author img { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; }
+        
+        .modal-desc { color: var(--text-muted); font-size: 1rem; line-height: 1.6; background: rgba(15, 23, 42, 0.5); padding: 15px; border-radius: 12px; border: 1px solid var(--border); }
+
+        footer { background: rgba(7, 9, 14, 0.9); border-top: 1px solid var(--border); padding: 40px; text-align: center; margin-top: auto; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="/" class="nav-logo">TheRoPlayer Tools</a>
+        <ul class="nav-links">
+            <li><a href="/" class="active">Home</a></li>
+            <li><a href="/upload.html">Upload</a></li>
+            <li><a href="/settings.html">Settings</a></li>
+            <li><a href="/tos.html">Terms</a></li>
+            <li id="auth-slot"><a href="/auth/discord" class="btn-auth">Login with Discord</a></li>
+        </ul>
+    </nav>
+
+    <div class="main-content">
+        <header>
+            <h1>TheRoPlayer Tools</h1>
+            <p>Community Uncopylocked Assets, Scripts & Tools</p>
+        </header>
+
+        <div class="container" id="tools-container"></div>
+        <div id="pagination-container" style="display: flex; justify-content: center; gap: 10px; margin-top: 40px;"></div>
+    </div>
+
+    <!-- Expanded Post Modal -->
+    <div class="modal-overlay" id="postModal">
+        <div class="modal-card">
+            <button class="modal-close" id="closeModal">&times;</button>
+            <img id="modalImg" class="modal-img" src="" alt="Post image">
+            
+            <div>
+                <span id="modalBadge" class="badge-type" style="position: static; display: inline-block; margin-bottom: 10px;"></span>
+                <h2 id="modalTitle" class="modal-title"></h2>
+            </div>
+
+            <div class="modal-author" onclick="goToProfile()" title="View Profile">
+                <img id="modalAuthorAvatar" src="" alt="Author">
+                <div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">Uploaded by</p>
+                    <p id="modalAuthorName" style="font-weight: 700; color: var(--primary);"></p>
+                </div>
+            </div>
+
+            <p id="modalDesc" class="modal-desc"></p>
+            
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <button id="like-btn" onclick="toggleLike()" style="padding: 12px 20px; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">❤️ <span id="like-count">0</span> Likes</button>
+                <a id="modalDownloadBtn" href="#" class="btn btn-download" style="padding: 12px;">Proceed to Download</a>
+            </div>
+
+            <!-- Comments Section -->
+            <div style="border-top: 1px solid var(--border); padding-top: 20px; display: flex; flex-direction: column; gap: 12px;">
+                <h3 style="font-size: 1.1rem;">Comments</h3>
+                <div id="comments-list" style="max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px;"></div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="comment-input" placeholder="Write a comment..." style="flex: 1; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: rgba(15,23,42,0.8); color: #fff; outline: none;">
+                    <button onclick="postComment()" style="padding: 12px 20px; background: var(--primary); color: #000; border: none; border-radius: 12px; font-weight: 700; cursor: pointer;">Post</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 TheRoPlayer Tools. All rights reserved.</p>
+    </footer>
+
+    <script>
+        let allTools = [];
+        let currentPage = 1;
+        const itemsPerPage = 50;
+        let currentToolId = null;
+        let currentAuthorId = null;
+        const modal = document.getElementById('postModal');
+
+        // Check Auth & Admin Navbar Link
+        fetch('/api/me')
+            .then(res => res.json())
+            .then(data => {
+                const slot = document.getElementById('auth-slot');
+                if (data.authenticated) {
+                    slot.innerHTML = `
+                        <div class="user-profile" onclick="window.location.href='/profile.html?id=${data.user.id}'" title="View your profile">
+                            <img src="${data.user.avatar}" class="user-avatar" alt="Avatar">
+                            <span>${data.user.username}</span>
+                            <a href="/logout" style="color: #ef4444; margin-left: 8px; font-size: 0.85rem;" onclick="event.stopPropagation()">Logout</a>
+                        </div>
+                    `;
+                }
+            });
+
+        fetch('/api/admin/check')
+            .then(res => res.json())
+            .then(data => {
+                if (data.admin) {
+                    const navLinks = document.querySelector('.nav-links');
+                    const adminLi = document.createElement('li');
+                    adminLi.innerHTML = '<a href="/admin.html" style="color: #ef4444; font-weight: 800;">🛡️ Admin</a>';
+                    navLinks.insertBefore(adminLi, navLinks.firstChild);
+                }
+            });
+
+        document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('active'));
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+
+        // Load Feed & Pagination
+        fetch('/api/tools')
+            .then(res => res.json())
+            .then(tools => {
+                allTools = tools;
+                renderPage(1);
+            });
+
+        function renderPage(page) {
+            currentPage = page;
+            const container = document.getElementById('tools-container');
+            container.innerHTML = '';
+
+            if (allTools.length === 0) {
+                container.innerHTML = '<p style="text-align: center; grid-column: 1/-1; color: var(--text-muted);">No assets uploaded yet.</p>';
+                document.getElementById('pagination-container').innerHTML = '';
+                return;
+            }
+
+            const startIndex = (page - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedItems = allTools.slice(startIndex, endIndex);
+
+            paginatedItems.forEach(tool => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                const isGame = tool.assetType === 'game';
+                
+                card.innerHTML = `
+                    ${tool.isTrending ? '<span class="badge-trending">🔥 Trending</span>' : ''}
+                    <span class="badge-type ${isGame ? 'badge-game' : 'badge-script'}">${isGame ? 'Game' : 'Script'}</span>
+                    <div class="card-img-wrapper">
+                        <img src="${tool.image}" alt="${tool.title}">
+                    </div>
+                    <div class="card-content">
+                        <h2 class="card-title">${tool.title}</h2>
+                        <p class="card-description">${tool.description}</p>
+                        <div class="card-actions">
+                            ${tool.youtubeUrl ? `<a href="${tool.youtubeUrl}" target="_blank" class="btn btn-yt" onclick="event.stopPropagation()">YT Video</a>` : ''}
+                            <a href="/generateddown.html?id=${tool.id}" class="btn btn-download" onclick="event.stopPropagation()">Download</a>
+                        </div>
+                    </div>
+                `;
+                card.addEventListener('click', () => openModal(tool));
+                container.appendChild(card);
+            });
+
+            renderPaginationControls();
+        }
+
+        function renderPaginationControls() {
+            const totalPages = Math.ceil(allTools.length / itemsPerPage);
+            const pagContainer = document.getElementById('pagination-container');
+            pagContainer.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.textContent = i;
+                btn.className = 'btn';
+                btn.style.cssText = `padding: 10px 16px; background: ${i === currentPage ? 'var(--primary)' : 'rgba(30,41,59,0.8)'}; color: ${i === currentPage ? '#000' : '#fff'}; border: 1px solid var(--border); border-radius: 10px; cursor: pointer;`;
+                btn.onclick = () => {
+                    renderPage(i);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                };
+                pagContainer.appendChild(btn);
+            }
+        }
+
+        function openModal(tool) {
+            currentToolId = tool.id;
+            currentAuthorId = tool.author ? tool.author.id : null;
+
+            document.getElementById('modalImg').src = tool.image;
+            document.getElementById('modalTitle').textContent = tool.title;
+            document.getElementById('modalDesc').textContent = tool.description;
+            document.getElementById('modalAuthorName').textContent = tool.author ? tool.author.username : 'Unknown';
+            document.getElementById('modalAuthorAvatar').src = tool.author ? tool.author.avatar : 'https://cdn.discordapp.com/embed/avatars/0.png';
+            document.getElementById('modalDownloadBtn').href = `/generateddown.html?id=${tool.id}`;
+            
+            document.getElementById('like-count').textContent = tool.likes ? tool.likes.length : 0;
+            
+            const badge = document.getElementById('modalBadge');
+            const isGame = tool.assetType === 'game';
+            badge.className = `badge-type ${isGame ? 'badge-game' : 'badge-script'}`;
+            badge.textContent = isGame ? 'Game Asset (.rbxl)' : 'Lua Script (.lua)';
+
+            renderComments(tool.comments || []);
+            modal.classList.add('active');
+        }
+
+        function goToProfile() {
+            if (currentAuthorId) {
+                window.location.href = `/profile.html?id=${currentAuthorId}`;
+            }
+        }
+
+        async function toggleLike() {
+            const res = await fetch(`/api/tools/${currentToolId}/like`, { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('like-count').textContent = data.likes.length;
+            } else {
+                alert('Please login with Discord to like posts.');
+            }
+        }
+
+        async function postComment() {
+            const input = document.getElementById('comment-input');
+            const text = input.value;
+            if (!text.trim()) return;
+
+            const res = await fetch(`/api/tools/${currentToolId}/comment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                input.value = '';
+                renderComments(data.comments);
+            } else {
+                alert('Please login with Discord to comment.');
+            }
+        }
+
+        function renderComments(comments) {
+            const list = document.getElementById('comments-list');
+            list.innerHTML = '';
+            if (!comments || comments.length === 0) {
+                list.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">No comments yet. Be the first!</p>';
+                return;
+            }
+            comments.forEach(c => {
+                const div = document.createElement('div');
+                div.style.cssText = 'background: rgba(15,23,42,0.6); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); font-size: 0.9rem;';
+                div.innerHTML = `<strong style="color: var(--primary);">${c.username}:</strong> ${c.text}`;
+                list.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>
