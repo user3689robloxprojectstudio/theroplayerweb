@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Control Panel | TheRoPlayer Tools</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg-color: #07090e; 
+            --surface: rgba(30, 41, 59, 0.7); 
+            --primary: #38bdf8; 
+            --accent: #a855f7;
+            --danger: #ef4444; 
+            --success: #22c55e; 
+            --text-main: #f8fafc; 
+            --text-muted: #94a3b8; 
+            --border: rgba(255, 255, 255, 0.08); 
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+        
+        nav { position: fixed; top: 0; left: 0; width: 100%; background: rgba(7, 9, 14, 0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; padding: 18px 40px; z-index: 1000; }
+        .nav-logo { font-size: 1.25rem; font-weight: 800; color: var(--primary); text-decoration: none; }
+        .nav-links { display: flex; gap: 25px; list-style: none; align-items: center; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; font-weight: 600; }
+        .nav-links a:hover { color: var(--primary); }
+
+        .main-content { max-width: 900px; width: 100%; margin: 120px auto 60px auto; padding: 0 20px; flex: 1; }
+        .admin-card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 35px; margin-bottom: 30px; }
+        h1 { font-size: 2.2rem; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
+        h2 { font-size: 1.25rem; margin-bottom: 20px; font-weight: 700; }
+        p { color: var(--text-muted); font-size: 0.95rem; }
+
+        .item-row { background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 14px; padding: 18px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        
+        .btn { padding: 8px 16px; border-radius: 10px; font-weight: 700; border: none; cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
+        .btn-green { background: rgba(34, 197, 94, 0.15); color: var(--success); border: 1px solid rgba(34, 197, 94, 0.3); }
+        .btn-green:hover { background: var(--success); color: #07090e; }
+        .btn-purple { background: rgba(168, 85, 247, 0.15); color: var(--accent); border: 1px solid rgba(168, 85, 247, 0.3); }
+        .btn-purple:hover { background: var(--accent); color: #fff; }
+        .btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .btn-danger:hover { background: var(--danger); color: #fff; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="/" class="nav-logo">🛡️ Admin Dashboard</a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/upload.html">Upload</a></li>
+            <li><a href="/rules.html">Rules</a></li>
+        </ul>
+    </nav>
+
+    <div class="main-content" id="admin-container" style="display: none;">
+        <div class="admin-card">
+            <h1>🛡️ Administrator Control Panel</h1>
+            <p>Manage community user permissions, verify accounts, toggle user bans, feature trending posts, or remove violating content.</p>
+        </div>
+
+        <div class="admin-card">
+            <h2>👥 Registered Community Users</h2>
+            <div id="users-list">Loading users...</div>
+        </div>
+
+        <div class="admin-card">
+            <h2>📦 Published Community Assets</h2>
+            <div id="posts-list">Loading posts...</div>
+        </div>
+    </div>
+
+    <script>
+        async function verifyAdmin() {
+            try {
+                const res = await fetch('/api/admin/check');
+                const data = await res.json();
+                if (!data.admin) {
+                    window.location.href = '/';
+                } else {
+                    document.getElementById('admin-container').style.display = 'block';
+                    loadData();
+                }
+            } catch {
+                window.location.href = '/';
+            }
+        }
+
+        async function loadData() {
+            try {
+                // Load Users
+                const userRes = await fetch('/api/admin/users');
+                const users = await userRes.json();
+                const usersList = document.getElementById('users-list');
+                usersList.innerHTML = '';
+
+                const userArray = Object.values(users);
+                if (userArray.length === 0) {
+                    usersList.innerHTML = '<p style="color: var(--text-muted);">No users registered yet.</p>';
+                } else {
+                    userArray.forEach(u => {
+                        if (!u || !u.id) return;
+                        
+                        // Robust username fallback handling
+                        const displayName = (u.username && u.username !== 'undefined') ? u.username : `User_${u.id.slice(-4)}`;
+                        
+                        const div = document.createElement('div');
+                        div.className = 'item-row';
+                        div.innerHTML = `
+                            <div>
+                                <h4 style="margin-bottom: 4px; font-weight:700;">
+                                    ${displayName} ${u.verified ? '✅' : ''} ${u.banned ? '🔴 <span style="color:var(--danger);">(BANNED)</span>' : ''}
+                                </h4>
+                                <p style="font-size: 0.8rem; color: var(--text-muted);">ID: ${u.id} • Followers: ${u.followers ? u.followers.length : 0}</p>
+                            </div>
+                            <div style="display:flex; gap:8px;">
+                                <button onclick="toggleVerify('${u.id}')" class="btn btn-green">${u.verified ? 'Un-verify' : 'Verify'}</button>
+                                <button onclick="toggleBan('${u.id}')" class="btn btn-danger">${u.banned ? 'Unban User' : 'Ban User'}</button>
+                            </div>
+                        `;
+                        usersList.appendChild(div);
+                    });
+                }
+
+                // Load Posts
+                const postRes = await fetch('/api/tools');
+                const posts = await postRes.json();
+                const postsList = document.getElementById('posts-list');
+                postsList.innerHTML = '';
+
+                if (!posts || posts.length === 0) {
+                    postsList.innerHTML = '<p style="color: var(--text-muted);">No assets or scripts uploaded yet.</p>';
+                    return;
+                }
+
+                posts.forEach(p => {
+                    const authorName = (p.author && p.author.username && p.author.username !== 'undefined') ? p.author.username : 'Unknown';
+                    const div = document.createElement('div');
+                    div.className = 'item-row';
+                    div.innerHTML = `
+                        <div>
+                            <h4 style="margin-bottom: 4px; font-weight:700;">
+                                ${p.title} 
+                                <span style="font-size:0.75rem; color:var(--primary); font-weight:600;">(${p.assetType})</span>
+                            </h4>
+                            <p style="font-size: 0.8rem; color: var(--text-muted);">
+                                Author: ${authorName} • <span style="color: ${p.isTrending ? 'var(--accent)' : 'var(--text-muted)'}; font-weight:600;">${p.isTrending ? '🔥 Trending' : 'Standard'}</span>
+                            </p>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <button onclick="toggleTrending('${p.id}')" class="btn btn-purple">${p.isTrending ? 'Remove Trend' : 'Make Trending'}</button>
+                            <button onclick="deletePost('${p.id}')" class="btn btn-danger">Delete</button>
+                        </div>
+                    `;
+                    postsList.appendChild(div);
+                });
+
+            } catch (err) {
+                console.error('Error loading admin data:', err);
+            }
+        }
+
+        async function toggleVerify(id) {
+            await fetch(`/api/admin/verify/${id}`, { method: 'POST' });
+            loadData();
+        }
+
+        async function toggleBan(id) {
+            await fetch(`/api/admin/users/${id}/ban`, { method: 'POST' });
+            loadData();
+        }
+
+        async function toggleTrending(id) {
+            await fetch(`/api/admin/posts/${id}/trending`, { method: 'POST' });
+            loadData();
+        }
+
+        async function deletePost(id) {
+            if (!confirm('Are you sure you want to permanently delete this post and its file?')) return;
+            await fetch(`/api/admin/posts/${id}`, { method: 'DELETE' });
+            loadData();
+        }
+
+        verifyAdmin();
+    </script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Asset or Script | TheRoPlayer Tools</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg-color: #07090e; 
+            --sidebar-bg: #0b0f19;
+            --surface: rgba(30, 41, 59, 0.7); 
+            --primary: #38bdf8; 
+            --accent: #a855f7;
+            --danger: #ef4444; 
+            --success: #22c55e; 
+            --text-main: #f8fafc; 
+            --text-muted: #94a3b8; 
+            --border: rgba(255, 255, 255, 0.08); 
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+        
+        nav { position: fixed; top: 0; left: 0; width: 100%; background: rgba(7, 9, 14, 0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; padding: 18px 40px; z-index: 1000; }
+        .nav-logo { font-size: 1.25rem; font-weight: 800; color: var(--primary); text-decoration: none; }
+        .nav-links { display: flex; gap: 25px; list-style: none; align-items: center; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; font-weight: 600; }
+        .nav-links a:hover { color: var(--primary); }
+
+        .main-content { max-width: 650px; width: 100%; margin: 120px auto 60px auto; padding: 0 20px; flex: 1; }
+        .upload-card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 40px; }
+        h1 { font-size: 2rem; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
+        p { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 30px; }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        input[type="text"], textarea, select { width: 100%; padding: 14px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 12px; color: #fff; outline: none; font-size: 0.95rem; }
+        input[type="text"]:focus, textarea:focus, select:focus { border-color: var(--primary); }
+        input[type="file"] { width: 100%; padding: 12px; background: rgba(15, 23, 42, 0.6); border: 1px dashed var(--border); border-radius: 12px; color: var(--text-muted); cursor: pointer; }
+
+        .submit-btn { width: 100%; padding: 14px; background: var(--primary); color: #07090e; font-weight: 800; border: none; border-radius: 12px; cursor: pointer; font-size: 1rem; transition: 0.2s; margin-top: 10px; }
+        .submit-btn:hover { opacity: 0.9; }
+
+        .notice-box { background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); padding: 14px; border-radius: 12px; margin-bottom: 25px; font-size: 0.85rem; color: #d8b4fe; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="/" class="nav-logo">📤 Upload Platform</a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/rules.html">Rules</a></li>
+        </ul>
+    </nav>
+
+    <div class="main-content">
+        <div class="upload-card">
+            <h1>Upload Asset or Script</h1>
+            <p>Publish your uncopylocked game, studio plugin, UI pack, or Cheat.gg script.</p>
+
+            <div class="notice-box">
+                ⚡ <strong>Note on Cheat.gg:</strong> The Cheat.gg category strictly accepts <strong>.lua</strong> scripts or <strong>.txt</strong> files only. Game files or models uploaded here will be automatically rejected.
+            </div>
+
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Asset Title</label>
+                    <input type="text" name="title" required placeholder="e.g. OP 99 Nights Script">
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" rows="4" required placeholder="Describe what your tool or script does..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Category / Asset Type</label>
+                    <select name="assetType" id="assetTypeSelect" required onchange="handleCategoryChange()">
+                        <option value="uncopylocked">📦 Uncopylocked Game</option>
+                        <option value="cheat.gg">⚡ Cheat.gg Script (.lua / .txt)</option>
+                        <option value="plugin">🔌 Studio Plugin</option>
+                        <option value="ui">🎨 UI Package</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Thumbnail Image</label>
+                    <input type="file" name="image" accept="image/*">
+                </div>
+
+                <div class="form-group">
+                    <label id="fileLabel">Asset / Script File</label>
+                    <input type="file" name="assetFile" id="assetFileInput" required>
+                </div>
+
+                <button type="submit" class="submit-btn">🚀 Publish Asset</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function handleCategoryChange() {
+            const type = document.getElementById('assetTypeSelect').value;
+            const fileInput = document.getElementById('assetFileInput');
+            const fileLabel = document.getElementById('fileLabel');
+
+            if (type === 'cheat.gg') {
+                fileLabel.textContent = 'Script File (Strictly .lua or .txt only)';
+                fileInput.accept = '.lua,.txt';
+            } else {
+                fileLabel.textContent = 'Asset File';
+                fileInput.accept = '';
+            }
+        }
+
+        document.getElementById('uploadForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                window.location.href = data.downloadUrl;
+            } else {
+                alert(data.error || 'Upload failed');
+            }
+        };
+    </script>
+</body>
+</html>

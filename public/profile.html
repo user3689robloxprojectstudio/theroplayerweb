@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile | TheRoPlayer Tools</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg-color: #07090e; 
+            --sidebar-bg: #0b0f19;
+            --surface: rgba(30, 41, 59, 0.7); 
+            --primary: #38bdf8; 
+            --accent: #a855f7;
+            --danger: #ef4444; 
+            --success: #22c55e; 
+            --text-main: #f8fafc; 
+            --text-muted: #94a3b8; 
+            --border: rgba(255, 255, 255, 0.08); 
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; }
+
+        /* Sidebar Styling */
+        sidebar { width: 280px; background: var(--sidebar-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; height: 100vh; top: 0; left: 0; z-index: 100; padding: 30px 20px; }
+        .sidebar-brand { font-size: 1.35rem; font-weight: 800; color: var(--primary); text-decoration: none; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; }
+        .sidebar-menu { display: flex; flex-direction: column; gap: 10px; list-style: none; flex: 1; }
+        .sidebar-menu a { display: flex; align-items: center; gap: 14px; padding: 12px 16px; color: var(--text-muted); text-decoration: none; font-weight: 600; border-radius: 12px; transition: 0.2s; font-size: 0.95rem; }
+        .sidebar-menu a:hover, .sidebar-menu a.active { background: rgba(56, 189, 248, 0.1); color: var(--primary); }
+        
+        .user-panel { border-top: 1px solid var(--border); padding-top: 20px; display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--primary); }
+        .user-info h4 { font-size: 0.9rem; font-weight: 700; color: var(--text-main); }
+        .user-info p { font-size: 0.75rem; color: var(--text-muted); cursor: pointer; }
+        .user-info p:hover { color: var(--danger); }
+        .auth-btn { background: #5865F2; color: #fff; padding: 10px 20px; border-radius: 12px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; width: 100%; }
+        .auth-btn:hover { opacity: 0.9; }
+
+        /* Main Content Area */
+        .main-wrapper { margin-left: 280px; flex: 1; padding: 40px; display: flex; justify-content: center; }
+        .profile-card { background: var(--surface); border: 1px solid var(--border); width: 100%; max-width: 700px; border-radius: 24px; padding: 40px; height: fit-content; }
+        
+        .profile-header { display: flex; align-items: center; gap: 20px; margin-bottom: 30px; }
+        .profile-avatar { width: 90px; height: 90px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; }
+        
+        .section-box { background: rgba(15, 23, 42, 0.6); padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 25px; }
+        
+        .asset-row { background: rgba(15, 23, 42, 0.8); padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; text-decoration: none; color: inherit; transition: 0.2s; }
+        .asset-row:hover { border-color: var(--primary); }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar with Emoji Icons -->
+    <sidebar>
+        <a href="/" class="sidebar-brand">🎮 TheRoPlayer</a>
+        <ul class="sidebar-menu">
+            <li><a href="/">🏠 Home Feed</a></li>
+            <li><a href="/upload.html">📤 Upload Asset</a></li>
+            <li><a href="/rules.html">📜 Community Rules</a></li>
+            <li id="admin-link" style="display: none;"><a href="/admin.html">🛡️ Admin Dashboard</a></li>
+        </ul>
+        
+        <div id="user-section">
+            <a href="/auth/discord" class="auth-btn">🪐 Login with Discord</a>
+        </div>
+    </sidebar>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+        <div class="profile-card" id="profileContainer">
+            <p style="color: var(--text-muted);">Loading profile...</p>
+        </div>
+    </div>
+
+    <script>
+        async function initProfilePage() {
+            try {
+                // Check session for sidebar user panel
+                const meRes = await fetch('/api/me');
+                const meData = await meRes.json();
+                
+                const userSection = document.getElementById('user-section');
+                let loggedInUserId = null;
+
+                if (meData.authenticated) {
+                    loggedInUserId = meData.user.id;
+                    userSection.innerHTML = `
+                        <div class="user-panel">
+                            <img src="${meData.user.avatar}" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'" class="user-avatar" alt="Avatar">
+                            <div class="user-info">
+                                <h4>${meData.user.username} ${meData.user.verified ? '✅' : ''}</h4>
+                                <p onclick="window.location.href='/logout'">Log out</p>
+                            </div>
+                        </div>
+                    `;
+                    const adminRes = await fetch('/api/admin/check');
+                    const adminData = await adminRes.json();
+                    if (adminData.admin) {
+                        document.getElementById('admin-link').style.display = 'block';
+                    }
+                }
+
+                // Get user ID from query params, or default to logged-in user
+                const urlParams = new URLSearchParams(window.location.search);
+                let targetId = urlParams.get('id');
+
+                if (!targetId && meData.authenticated) {
+                    targetId = meData.user.id;
+                } else if (!targetId) {
+                    document.getElementById('profileContainer').innerHTML = '<p style="color:var(--danger);">No user specified. Please log in or provide a user ID.</p>';
+                    return;
+                }
+
+                // Fetch target profile data
+                const profileRes = await fetch(`/api/users/${targetId}`);
+                if (!profileRes.ok) {
+                    document.getElementById('profileContainer').innerHTML = '<p style="color:var(--danger);">Profile not found.</p>';
+                    return;
+                }
+                const { user, posts } = await profileRes.json();
+
+                const isOwner = loggedInUserId === user.id;
+                const isFollowing = user.followers && loggedInUserId ? user.followers.includes(loggedInUserId) : false;
+                const displayName = (user.username && user.username !== 'undefined') ? user.username : `User_${user.id.slice(-4)}`;
+
+                const container = document.getElementById('profileContainer');
+                container.innerHTML = `
+                    <div class="profile-header">
+                        <img src="${user.avatar}" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'" class="profile-avatar" alt="Avatar">
+                        <div>
+                            <h1 style="font-size:1.8rem; font-weight:800; display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                                ${displayName} ${user.verified ? '✅' : ''}
+                            </h1>
+                            <p style="color:var(--text-muted); font-size:0.95rem;">👥 ${user.followers ? user.followers.length : 0} Followers • Following: ${user.following ? user.following.length : 0}</p>
+                        </div>
+                    </div>
+
+                    <div class="section-box">
+                        <h3 style="font-size:0.9rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px; letter-spacing:0.5px;">About Developer</h3>
+                        <p id="bioText" style="font-size:1.05rem; line-height:1.5;">${user.bio || 'No bio provided yet.'}</p>
+                        ${isOwner ? `
+                            <button onclick="editBio()" style="margin-top:12px; padding:8px 16px; background:rgba(56,189,248,0.15); color:var(--primary); border:none; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.85rem;">✏️ Edit Bio</button>
+                        ` : ''}
+                    </div>
+
+                    ${!isOwner && loggedInUserId ? `
+                        <button onclick="toggleFollow('${user.id}')" style="width:100%; padding:14px; background:${isFollowing ? 'rgba(239,68,68,0.2)' : 'var(--primary)'}; color:${isFollowing ? '#ef4444' : '#07090e'}; font-weight:800; border:none; border-radius:14px; cursor:pointer; font-size:1rem; margin-bottom:30px;">
+                            ${isFollowing ? '❌ Unfollow Developer' : '➕ Follow Developer'}
+                        </button>
+                    ` : ''}
+
+                    <h2 style="font-size:1.25rem; font-weight:800; margin-bottom:15px;">📦 Uploaded Assets (${posts.length})</h2>
+                    <div style="display:flex; flex-direction:column; gap:10px; max-height:300px; overflow-y:auto;">
+                        ${posts.length > 0 ? posts.map(p => `
+                            <a href="/generateddown.html?id=${p.id}" class="asset-row">
+                                <div>
+                                    <strong style="font-size:1rem; display:block; margin-bottom:2px;">${p.title}</strong>
+                                    <span style="font-size:0.8rem; color:var(--primary); text-transform:uppercase; font-weight:600;">${p.assetType}</span>
+                                </div>
+                                <span style="font-size:0.85rem; color:var(--text-muted); font-weight:700;">View File →</span>
+                            </a>
+                        `).join('') : '<p style="color:var(--text-muted); font-size:0.9rem;">No assets uploaded by this developer yet.</p>'}
+                    </div>
+                `;
+
+            } catch (err) {
+                console.error('Error loading profile page:', err);
+            }
+        }
+
+        async function editBio() {
+            const currentBio = document.getElementById('bioText').textContent;
+            const newBio = prompt('Enter your new profile bio:', currentBio === 'No bio provided yet.' ? '' : currentBio);
+            if (newBio === null) return;
+
+            const res = await fetch('/api/user/bio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bio: newBio })
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('bioText').textContent = data.bio || 'No bio provided yet.';
+            }
+        }
+
+        async function toggleFollow(userId) {
+            const res = await fetch(`/api/users/${userId}/follow`, { method: 'POST' });
+            if (res.ok) {
+                location.reload();
+            }
+        }
+
+        initProfilePage();
+    </script>
+</body>
+</html>
